@@ -7,7 +7,7 @@ before_script:
     export DOCKER_TAG="${CI_COMMIT_SHA:0:8}"
     export DOCKER_REPO="$CI_REGISTRY_IMAGE"
     export DOCKER_IMAGE="${DOCKER_REPO}:${DOCKER_TAG}"
-    export DOCKER_CACHE_IMAGE="${DOCKER_REPO}:${CI_ENVIRONMENT_NAME}"
+# export DOCKER_CACHE_IMAGE="${DOCKER_REPO}:${CI_ENVIRONMENT_NAME}"
 
 buid:
   image: docker:stable
@@ -19,12 +19,12 @@ buid:
     - main
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    - docker pull "$DOCKER_CACHE_IMAGE" || docker pull "${DOCKER_REPO}:master" || true
+    - docker pull "${DOCKER_REPO}:${CI_ENVIRONMENT_NAME}" || docker pull "${DOCKER_REPO}:main" || true
     - docker pull "$DOCKER_IMAGE" || true
-    - docker build --pull --cache-from "$DOCKER_IMAGE" --cache-from "$DOCKER_CACHE_IMAGE" --cache-from "${DOCKER_REPO}:master" -t "$DOCKER_IMAGE" .
+    - docker build --pull --cache-from "$DOCKER_IMAGE" --cache-from "${DOCKER_REPO}:${CI_ENVIRONMENT_NAME}" --cache-from "${DOCKER_REPO}:main" -t "$DOCKER_IMAGE" .
     - docker push "$DOCKER_IMAGE"
-    - docker tag "$DOCKER_IMAGE" "$DOCKER_CACHE_IMAGE"
-    - docker push "$DOCKER_CACHE_IMAGE"
+    - docker tag "$DOCKER_IMAGE" "${DOCKER_REPO}:${CI_ENVIRONMENT_NAME}"
+    - docker push "${DOCKER_REPO}:${CI_ENVIRONMENT_NAME}"
 
 deploy:
   # Lightweight image with ssh
