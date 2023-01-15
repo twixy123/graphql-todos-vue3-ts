@@ -25,3 +25,14 @@ buid:
     - docker push "$DOCKER_IMAGE"
     - docker tag "$DOCKER_IMAGE" "$DOCKER_CACHE_IMAGE"
     - docker push "$DOCKER_CACHE_IMAGE"
+
+deploy:
+  # Lightweight image with ssh
+  image: kroniak/ssh-client
+  stage: deploy
+  environment: prod
+  only:
+    - main
+  script:
+    - chmod 400 $MASTER_SSH_KEY
+    - ssh -o StrictHostKeyChecking=no -i $MASTER_SSH_KEY "${MASTER_SSH_USER}@${MASTER_HOST}" "docker login -u ${CI_DEPLOY_USER} -p ${CI_DEPLOY_PASSWORD} ${CI_REGISTRY} && docker rm -f ${CI_PROJECT_NAME} || true && docker rmi \$(docker images -q ${DOCKER_REPO}) || true && docker run --name=$CI_PROJECT_NAME --restart=always --network="host" -d $DOCKER_IMAGE"
